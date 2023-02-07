@@ -23,6 +23,7 @@ export const blazePoseDetectionPipelineModule = () => {
     name: "blazePoseDetection",
 
     onStart: async ({ canvas, canvasWidth, canvasHeight }) => {
+      console.log("start1");
       const hoge = document.getElementsByClassName("square-box")[0];
       hoge.style.display = "block";
 

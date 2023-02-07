@@ -18,6 +18,7 @@ export const bodySegmentationPipelineModule = () => {
     name: "bodySegmentation",
 
     onStart: async ({ canvas, canvasWidth, canvasHeight }) => {
+      console.log("start2");
       videoElement = document.getElementsByTagName("video");
       // testCanvasElement = document.getElementById("testCanvas");
       // testCanvasCtx = testCanvasElement.getContext("2d");
