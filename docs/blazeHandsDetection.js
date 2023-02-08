@@ -9,11 +9,13 @@
 // import { drawingUtils } from "@mediapipe/drawing_utils/drawing_utils";
 // import { Pose } from "@mediapipe/pose/pose";
 
-let hands, videoElement, textElemnet, landmarkContainer, grid;
+let hands, videoElement, outputElement, ctx, textElemnet, landmarkContainer, grid;
 let processing = false;
 let isDetected = "False";
 let palmOpened = "Not Detected";
 let palmFacing = "Not Detected";
+let debug = "";
+let centerX, centerY, centerZ;　//掌の中央座標
 
 export const blazeHandsDetectionPipelineModule = () => {
   async function calcHands () {
@@ -32,6 +34,12 @@ export const blazeHandsDetectionPipelineModule = () => {
       hoge.style.display = "block";
       textElemnet = document.getElementById("text");
       videoElement = document.getElementsByTagName("video")[0];
+      //Canvasセットアップ
+      outputElement = document.getElementById("draw");
+      outputElement.width = canvas.clientWidth;
+      outputElement.height = canvas.clientHeight;
+      debug = outputElement.width + " " + outputElement.height;
+      ctx = outputElement.getContext('2d');
       landmarkContainer = document.getElementsByClassName("landmark-grid-container")[0];
       grid = new LandmarkGrid(landmarkContainer, {
         connectionColor: 0xcccccc,
@@ -83,6 +91,16 @@ export const blazeHandsDetectionPipelineModule = () => {
         let thirdFingerIsOpen = cancFingerAngle(landmarks[0], landmarks[13], landmarks[14], landmarks[15], landmarks[16]) < 100
         let fourthFingerIsOpen = cancFingerAngle(landmarks[0], landmarks[17], landmarks[18], landmarks[19], landmarks[20]) < 100
 
+        // 掌の中央に円を描く
+        centerX = (landmarks[10].x + landmarks[0].x)/2;
+        centerY = (landmarks[10].y + landmarks[0].y)/2;
+        centerZ = (landmarks[10].z + landmarks[0].z)/2;;
+        debug = centerX +  "<br />"+ centerY + "<br />"+ centerZ;
+        ctx.fillStyle = "lightskyblue";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX * outputElement.width, centerY * outputElement.height, 10, 0, Math.PI * 2, true);
+
         // ジェスチャー
         if (thumbIsOpen && firstFingerIsOpen && secondFingerIsOpen && thirdFingerIsOpen && fourthFingerIsOpen) {
           palmOpened = true; // 指5本オープン
@@ -107,6 +125,7 @@ export const blazeHandsDetectionPipelineModule = () => {
 
       function onResults (results) {
         processing = false;
+        ctx.clearRect(0, 0, outputElement.width, outputElement.height);
         if (!results.multiHandLandmarks) {
           return;
         }
@@ -137,7 +156,8 @@ export const blazeHandsDetectionPipelineModule = () => {
         textElemnet.innerHTML = 
         "Detected: " + isDetected + "<br />" +
         "Palm Open: " + palmOpened + "<br />" +
-        "Palm Facing: " + palmFacing;
+        "Palm Facing: " + palmFacing + "<br />" +
+        debug;
 
         if (results.multiHandWorldLandmarks) {
           // We only get to call updateLandmarks once, so we need to cook the data to
@@ -169,7 +189,8 @@ export const blazeHandsDetectionPipelineModule = () => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         },
       });
-      hands.setOptions({
+      //Mediapipe手のモデルの設定
+      hands.setOptions({ 
         maxNumHands: 1,
         modelComplexity: 1,
         minDetectionConfidence: 0.5,
