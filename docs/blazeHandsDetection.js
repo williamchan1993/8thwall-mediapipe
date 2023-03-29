@@ -15,7 +15,7 @@ let isDetected = "False";
 let palmOpened = "Not Detected";
 let palmFacing = "Not Detected";
 let debug = "";
-let centerX, centerY, centerZ;　//掌の中央座標
+let centerX, centerY, centerZ;//掌の中央座標
 
 export const blazeHandsDetectionPipelineModule = () => {
   async function calcHands () {
@@ -126,62 +126,30 @@ export const blazeHandsDetectionPipelineModule = () => {
       function onResults (results) {
         processing = false;
         ctx.clearRect(0, 0, outputElement.width, outputElement.height);
-        if (!results.multiHandLandmarks) {
-          return;
-        }
-        if (results.multiHandedness[0]) { //左手右手判定
-          if(results.multiHandedness[0].label == "Left"){ // Mediapipe Handsの結果は何故か左右の判定は逆になりました(要確認)
-            isDetected = "Right";
-          }else if(results.multiHandedness[0].label == "Right"){
-            isDetected = "Left";
-          }
-        }
-        
-        if (results.multiHandLandmarks) {// 手のLandmarkを獲得
-          const hand0 = results.multiHandLandmarks[0];
-          const hand1 = results.multiHandLandmarks[1];
-          if(hand0 != undefined){
-            detectFingerPose(results.multiHandLandmarks[0]);
-          }else if(hand1 != undefined){
-            detectFingerPose(results.multiHandLandmarks[1]);
-          }else{
-            isDetected = "Not Detected";
-            palmOpened = "Not Detected";
-            palmFacing = "Not Detected";
-          }
-        } else {
-          grid.updateLandmarks([]);
-        }
-        //テキスト表示を更新
-        textElemnet.innerHTML = 
-        "Detected: " + isDetected + "<br />" +
-        "Palm Open: " + palmOpened + "<br />" +
-        "Palm Facing: " + palmFacing + "<br />" +
-        debug;
+        const canvasA = document.getElementById('camerafeed');
+        const canvasB = document.getElementById('result');
 
-        if (results.multiHandWorldLandmarks) {
-          // We only get to call updateLandmarks once, so we need to cook the data to
-          // fit. The landmarks just merge, but the connections need to be offset.
-          const landmarks = results.multiHandWorldLandmarks.reduce((prev, current) => [...prev, ...current], []);
-          const colors = [];
-          let connections = [];
-          for (let loop = 0; loop < results.multiHandWorldLandmarks.length; ++loop) {
-              const offset = loop * window.HAND_CONNECTIONS.length;
-              const offsetConnections = window.HAND_CONNECTIONS.map((connection) => [
-                  connection[0] + offset,
-                  connection[1] + offset
-              ]);
-              connections = connections.concat(offsetConnections);
-              const classification = results.multiHandedness[loop];
-              colors.push({
-                  list: offsetConnections.map((unused, i) => i + offset),
-                  color: classification.label
-              });
-          }
-          grid.updateLandmarks(landmarks, connections, colors);
-        }else {
-          grid.updateLandmarks([]);
-        }
+        const ratioX = 1; // Maintain same width
+        let bh = canvasB.getBoundingClientRect().height;
+        let ah = canvasA.getBoundingClientRect().height;
+        const ratioY = bh / ah;
+
+        canvasB.width = canvasA.width;
+        canvasB.height = canvasA.height;
+
+        // Determine the dimensions of the cropped image
+        const cropWidth = Math.min(canvasA.width, canvasA.height * ratioX / ratioY);
+        const cropHeight = Math.min(canvasA.height, canvasA.width * ratioY / ratioX);
+        const cropX = (canvasA.width - cropWidth) / 2;
+        const cropY = (canvasA.height - cropHeight) / 2;
+
+        canvasB.width = cropWidth;
+        canvasB.height = cropHeight;
+
+        var destCtx = canvasB.getContext('2d');
+
+        destCtx.drawImage(canvasA, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
       }
 
       hands = new Hands({
