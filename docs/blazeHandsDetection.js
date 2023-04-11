@@ -56,6 +56,65 @@ export const blazeHandsDetectionPipelineModule = () => {
         centered: false
       });
 
+      // 手相API関連処理
+      let send_btn = document.getElementById('send');
+      send_btn.addEventListener('click', SendXMLHttpRequest, false);
+
+      // Sendボタン押下時の処理
+      function SendXMLHttpRequest() {
+        console.log("Pressed send button");
+        var response = document.getElementById("response");
+        response.innerText = "Loading";
+        const canvas = document.getElementById('result');
+
+        var dataURL = canvas.toDataURL('image/jpeg', 0.5);
+        var blob = dataURItoBlob(dataURL);
+
+        const form_data = new FormData();
+        form_data.append('file', blob);
+
+        // 通信用XMLHttpRequestを生成
+        let req = new XMLHttpRequest();
+
+        // POST形式でサーバ側の「response.php」へデータ通信を行う
+        req.open("POST", "https://tesou-api.ai-game.info/eng/api/v1/analysis/left_hand");
+
+        // トークン認証としてリクエストヘッダーを付与
+        req.setRequestHeader('Authorization', 'Bearer Xf941mRmTVup5KPs60xwluOwdqQPApTSBtF1MChDJ43YTKZtzrKNgDXamJVjsmvs')
+        req.send(form_data);
+
+        // 通信が完了したらレスポンスをコンソールに出力する
+        req.addEventListener('readystatechange', (r) => {
+            // ここでレスポンス結果を制御する
+            if (req.readyState === 4 && req.status === 200) {
+              console.log("result: " + req.responseText);
+                //result.innerHTML += req.responseText
+              var response = document.getElementById("response");
+              response.innerText = req.responseText;
+            }
+        });
+      }
+
+      function dataURItoBlob(dataURI) {
+        // convert base64/URLEncoded data component to raw binary data held in a string
+        var byteString;
+        if (dataURI.split(',')[0].indexOf('base64') >= 0)
+            byteString = atob(dataURI.split(',')[1]);
+        else
+            byteString = unescape(dataURI.split(',')[1]);
+    
+        // separate out the mime component
+        var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    
+        // write the bytes of the string to a typed array
+        var ia = new Uint8Array(byteString.length);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+    
+        return new Blob([ia], {type:mimeString});
+    }
+
       // 2頂点の距離の計算
       function calcDistance(p0, p1) {
         let a1 = p1.x-p0.x
@@ -107,7 +166,7 @@ export const blazeHandsDetectionPipelineModule = () => {
           if(isDetected == "Right"){ // 右手の時に表裏判定
           if(landmarks[4].x > landmarks[0].x){
               palmFacing = "Inwards";
-            }else{
+            }else{canvasResult
               palmFacing = "Outwards";
             }
           }else{ // 左手の時に表裏判定
@@ -126,30 +185,41 @@ export const blazeHandsDetectionPipelineModule = () => {
       function onResults (results) {
         processing = false;
         ctx.clearRect(0, 0, outputElement.width, outputElement.height);
-        const canvasA = document.getElementById('camerafeed');
-        const canvasB = document.getElementById('result');
+        const canvasCamera = document.getElementById('camerafeed');
+        const canvasResult = document.getElementById('result');
+        canvasResult.width = 602;
+        canvasResult.height = 802;
+
+        // console.log(
+        //   "canvasCamera: " + canvasCamera.width + " " + canvasCamera.height + 
+        //   " canvasResult: " + canvasResult.width + " " + canvasResult.height
+        // );
+
+        // Scale up canvasCamera to same size as canvasResult;
+        
 
         const ratioX = 1; // Maintain same width
-        let bh = canvasB.getBoundingClientRect().height;
-        let ah = canvasA.getBoundingClientRect().height;
-        const ratioY = bh / ah;
-
-        canvasB.width = canvasA.width;
-        canvasB.height = canvasA.height;
-
+        let ch = canvasCamera.height;
+        let rh = canvasResult.height;
+      
+        const ratioY = ch / rh;
+        
         // Determine the dimensions of the cropped image
-        const cropWidth = Math.min(canvasA.width, canvasA.height * ratioX / ratioY);
-        const cropHeight = Math.min(canvasA.height, canvasA.width * ratioY / ratioX);
-        const cropX = (canvasA.width - cropWidth) / 2;
-        const cropY = (canvasA.height - cropHeight) / 2;
+        const cropWidth = Math.min(canvasCamera.width, canvasCamera.height * ratioX / ratioY);
+        const cropHeight = Math.min(canvasCamera.height, canvasCamera.width * ratioY / ratioX);
+        const cropX = (canvasCamera.width - cropWidth) / 2;
+        const cropY = (canvasCamera.height - cropHeight) / 2;
 
-        canvasB.width = cropWidth;
-        canvasB.height = cropHeight;
+        canvasResult.width = 602;
+        canvasResult.height = 802;
 
-        var destCtx = canvasB.getContext('2d');
+        // console.log(
+        //   "cropX: " + cropX + " cropWidth: " + cropWidth +
+        //   " cropY: " + cropY + " cropHeight: " + cropHeight
+        // );
 
-        destCtx.drawImage(canvasA, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-
+        var destCtx = canvasResult.getContext('2d');
+        destCtx.drawImage(canvasCamera, cropX, cropY, cropWidth, cropHeight, 0, 0, 602, 802);
       }
 
       hands = new Hands({
