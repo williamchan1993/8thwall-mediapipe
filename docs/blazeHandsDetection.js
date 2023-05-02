@@ -15,7 +15,7 @@ let isDetected = "False";
 let palmOpened = "Not Detected";
 let palmFacing = "Not Detected";
 let debug = "";
-let centerX, centerY, centerZ;　//掌の中央座標
+let centerX, centerY, centerZ; //掌の中央座標
 
 export const blazeHandsDetectionPipelineModule = () => {
   async function calcHands () {
