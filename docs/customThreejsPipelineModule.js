@@ -37,11 +37,6 @@ export const customThreejsPipelineModule = () => {
     );
     scene.add(camera);
 
-    // const geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
-    // const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); 
-    // const cube = new THREE.Mesh( geometry, material ); 
-    // scene.add( cube );
-
     const renderer = new THREE.WebGLRenderer({
       canvas,
       context: GLctx,
@@ -53,7 +48,6 @@ export const customThreejsPipelineModule = () => {
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
     scene3 = { scene, camera, renderer };
     engaged = true;
 
@@ -71,6 +65,13 @@ export const customThreejsPipelineModule = () => {
       vertexShader: testVert,
     });
     composer.addPass(shaderPass);
+    camera.position.set(0, 2, 5);
+
+    // Sync the xr controller's 6DoF position and camera paremeters with our scene.
+    XR8.XrController.updateCameraProjectionMatrix({
+      origin: camera.position,
+      facing: camera.quaternion,
+    })
   };
 
   // This is a workaround for https://bugs.webkit.org/show_bug.cgi?id=237230
@@ -126,6 +127,7 @@ export const customThreejsPipelineModule = () => {
       if (!engaged) {
         return;
       }
+      console.log("canvas:" + canvasWidth + " " + canvasHeight);
       cameraTexture = new THREE.DataTexture(
         new Uint8Array(canvasWidth * canvasHeight * 3),
         canvasWidth,
@@ -137,20 +139,25 @@ export const customThreejsPipelineModule = () => {
     },
     onRender: () => {
       const { scene, camera, renderer } = scene3;
-      if (cameraTexture) {
-        renderer.copyFramebufferToTexture(
-          cameraTextureCopyPosition,
-          cameraTexture,
-        );
-      }
+      // if (cameraTexture) {
+      //   renderer.copyFramebufferToTexture(
+      //     cameraTextureCopyPosition,
+      //     cameraTexture,
+      //   );
+      //   console.log("Debug 3");
+      // }
 
       renderer.clearDepth();
-      if (needsPrerenderFinish) {
-        renderer.getContext().finish();
-      }
-      shaderPass.uniforms.cameraTexture = { value: cameraTexture };
-      shaderPass.uniforms.segmentTexture = { value: segmentCanvasTexture };
-      composer.render();
+      // if (needsPrerenderFinish) {
+      //   renderer.getContext().finish();
+      //   console.log("Debug 4");
+      // }
+      //shaderPass.uniforms.cameraTexture = { value: cameraTexture };
+      //shaderPass.uniforms.segmentTexture = { value: segmentCanvasTexture };
+      //composer.render();
+
+      renderer.render(scene, camera);
+      console.log("Debug 5");
     },
     // Get a handle to the xr scene, camera and renderer. Returns:
     // {
