@@ -4,11 +4,19 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import testVert from "./shaders/test.vert";
 import composite from "./shaders/composit.frag";
+import { blazeHandsDetectionPipelineModule } from "./blazeHandsDetection.js";
 
 let segmentCanvasTexture;
 let shaderPass;
 let cameraTexture;
 let cameraTextureCopyPosition;
+
+let centerXdata, centerYdata;
+
+let surface  // Transparent surface for raycasting for object placement.
+
+const raycaster = new THREE.Raycaster()
+const tapPosition = new THREE.Vector2()
 
 export const setSegmentTexture = (imageBitmap) => {
   segmentCanvasTexture = new THREE.CanvasTexture(imageBitmap);
@@ -28,6 +36,8 @@ export const customThreejsPipelineModule = () => {
     if (engaged) {
       return;
     }
+    centerXdata = document.getElementById("centerXdata");
+    centerYdata = document.getElementById("centerYdata");
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       60.0 /* initial field of view; will get set based on device info later. */,
@@ -51,6 +61,39 @@ export const customThreejsPipelineModule = () => {
     scene3 = { scene, camera, renderer };
     engaged = true;
 
+    const light = new THREE.DirectionalLight(0xffffff, 1, 100)
+    light.position.set(1, 4.3, 2.5)  // default
+    scene.add(light)  // Add soft white light to the scene.
+    scene.add(new THREE.AmbientLight(0x404040, 5))  // Add soft white light to the scene.
+
+    light.shadow.mapSize.width = 1024  // default
+    light.shadow.mapSize.height = 1024  // default
+    light.shadow.camera.near = 0.5  // default
+    light.shadow.camera.far = 500  // default
+    light.castShadow = true
+
+    // surface = new THREE.Mesh(
+    //   new THREE.PlaneGeometry(1, 1, 1, 1),
+    //   new THREE.ShadowMaterial({
+    //     opacity: 0.5,
+    //   })
+    // )
+    surface = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1, 1, 1),
+      new THREE.MeshBasicMaterial( {color: 0xFFFFFF} ) 
+    )
+    surface.rotateX(-Math.PI / 2)
+    surface.position.set(0, 0, 0)
+    surface.receiveShadow = true
+    scene.add(surface)
+
+    // const cubeGeometry = new THREE.BoxGeometry( 0.5, 0.5, 0.5 ); 
+    // const cubeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); 
+    // const cube = new THREE.Mesh( cubeGeometry, cubeMaterial ); 
+    // cube.position.set(0, 0.25, 0);
+    // cube.castShadow = true;
+    // scene.add( cube );
+
     window.scene3 = scene3;
     window.XR8.Threejs.xrScene = xrScene;
 
@@ -65,7 +108,7 @@ export const customThreejsPipelineModule = () => {
       vertexShader: testVert,
     });
     composer.addPass(shaderPass);
-    camera.position.set(0, 2, 5);
+    camera.position.set(0, 2, 2);
 
     // Sync the xr controller's 6DoF position and camera paremeters with our scene.
     XR8.XrController.updateCameraProjectionMatrix({
@@ -122,12 +165,24 @@ export const customThreejsPipelineModule = () => {
       if (position) {
         camera.position.set(position.x, position.y, position.z);
       }
+
+      // calculate tap position in normalized device coordinates (-1 to +1) for both components.
+      tapPosition.x = (centerXdata.innerHTML) * 2 - 1
+      tapPosition.y = -(centerYdata.innerHTML) * 2 + 1
+      //console.log(centerXdata.innerHTML + " " + centerYdata.innerHTML);
+      //console.log("hand " + tapPosition.x + " " + tapPosition.y);
+      // Update the picking ray with the camera and tap position.
+      raycaster.setFromCamera(tapPosition, camera)
+      // Raycast against the "surface" object.
+      const intersects = raycaster.intersectObject(surface)
+      if (intersects.length === 1 && intersects[0].object === surface) {
+        console.log("hit" + tapPosition.x + " " + tapPosition.y);
+      }
     },
     onCanvasSizeChange: ({ canvasWidth, canvasHeight }) => {
       if (!engaged) {
         return;
       }
-      console.log("canvas:" + canvasWidth + " " + canvasHeight);
       cameraTexture = new THREE.DataTexture(
         new Uint8Array(canvasWidth * canvasHeight * 3),
         canvasWidth,
@@ -157,7 +212,6 @@ export const customThreejsPipelineModule = () => {
       //composer.render();
 
       renderer.render(scene, camera);
-      console.log("Debug 5");
     },
     // Get a handle to the xr scene, camera and renderer. Returns:
     // {

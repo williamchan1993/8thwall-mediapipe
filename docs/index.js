@@ -25,7 +25,7 @@ const onxrloaded = () => {
     initScenePipelineModule(),
     //bodySegmentationPipelineModule(),
     //blazePoseDetectionPipelineModule(),
-    blazeHandsDetectionPipelineModule(),
+    blazeHandsDetectionPipelineModule()
   ]);
 
   // Open the camera and start running the camera run loop.

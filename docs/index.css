@@ -48,3 +48,9 @@ button.paused {
   top:0;
   left:0;
 }
+
+.data {
+  height: 0%;
+  width: 0%;
+  font-size: 0;
+}

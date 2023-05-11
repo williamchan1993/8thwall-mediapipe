@@ -9,13 +9,13 @@
 // import { drawingUtils } from "@mediapipe/drawing_utils/drawing_utils";
 // import { Pose } from "@mediapipe/pose/pose";
 
-let hands, videoElement, outputElement, ctx, textElemnet, landmarkContainer, grid;
+let hands, videoElement, outputElement, ctx, textElemnet, landmarkContainer, grid, centerXdata, centerYdata;
 let processing = false;
 let isDetected = "False";
 let palmOpened = "Not Detected";
 let palmFacing = "Not Detected";
 let debug = "";
-let centerX, centerY, centerZ; //掌の中央座標
+var centerX, centerY, centerZ; //掌の中央座標
 
 export const blazeHandsDetectionPipelineModule = () => {
   async function calcHands () {
@@ -33,6 +33,8 @@ export const blazeHandsDetectionPipelineModule = () => {
       const hoge = document.getElementsByClassName("square-box")[0];
       hoge.style.display = "block";
       textElemnet = document.getElementById("text");
+      centerXdata = document.getElementById("centerXdata");
+      centerYdata = document.getElementById("centerYdata");
       videoElement = document.getElementsByTagName("video")[0];
       //Canvasセットアップ
       outputElement = document.getElementById("draw");
@@ -159,6 +161,9 @@ export const blazeHandsDetectionPipelineModule = () => {
         "Palm Facing: " + palmFacing + "<br />" +
         debug;
 
+        centerXdata.innerHTML = centerX;
+        centerYdata.innerHTML = centerY;
+
         if (results.multiHandWorldLandmarks) {
           // We only get to call updateLandmarks once, so we need to cook the data to
           // fit. The landmarks just merge, but the connections need to be offset.
@@ -206,5 +211,9 @@ export const blazeHandsDetectionPipelineModule = () => {
         calcHands();
       }
     },
+
+    getResult: () => {
+      return centerX;
+    }
   };
 };
