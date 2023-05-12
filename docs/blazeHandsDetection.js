@@ -9,7 +9,7 @@
 // import { drawingUtils } from "@mediapipe/drawing_utils/drawing_utils";
 // import { Pose } from "@mediapipe/pose/pose";
 
-let hands, videoElement, outputElement, ctx, textElemnet, landmarkContainer, grid, centerXdata, centerYdata;
+let hands, videoElement, outputElement, ctx, textElemnet, landmarkContainer, grid, centerXdata, centerYdata, forward, palmopen;
 let processing = false;
 let isDetected = "False";
 let palmOpened = "Not Detected";
@@ -35,6 +35,8 @@ export const blazeHandsDetectionPipelineModule = () => {
       textElemnet = document.getElementById("text");
       centerXdata = document.getElementById("centerXdata");
       centerYdata = document.getElementById("centerYdata");
+      forward = document.getElementById("forward");
+      palmopen = document.getElementById("palmopen");
       videoElement = document.getElementsByTagName("video")[0];
       //Canvasセットアップ
       outputElement = document.getElementById("draw");
@@ -98,14 +100,14 @@ export const blazeHandsDetectionPipelineModule = () => {
         centerY = (landmarks[10].y + landmarks[0].y)/2;
         centerZ = (landmarks[10].z + landmarks[0].z)/2;;
         debug = centerX +  "<br />"+ centerY + "<br />"+ centerZ;
-        ctx.fillStyle = "lightskyblue";
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(centerX * outputElement.width, centerY * outputElement.height, 10, 0, Math.PI * 2, true);
+        // ctx.fillStyle = "lightskyblue";
+        // ctx.fill();
+        // ctx.beginPath();
+        // ctx.arc(centerX * outputElement.width, centerY * outputElement.height, 10, 0, Math.PI * 2, true);
 
         // ジェスチャー
         if (thumbIsOpen && firstFingerIsOpen && secondFingerIsOpen && thirdFingerIsOpen && fourthFingerIsOpen) {
-          palmOpened = true; // 指5本オープン
+          palmOpened = "True"; // 指5本オープン
           if(isDetected == "Right"){ // 右手の時に表裏判定
           if(landmarks[4].x > landmarks[0].x){
               palmFacing = "Inwards";
@@ -160,6 +162,22 @@ export const blazeHandsDetectionPipelineModule = () => {
         "Palm Open: " + palmOpened + "<br />" +
         "Palm Facing: " + palmFacing + "<br />" +
         debug;
+
+        if(palmOpened == "False"){
+          palmopen.innerHTML = "1"; 
+        }else if(palmOpened == "True"){
+          palmopen.innerHTML = "2";
+        }else{
+          palmopen.innerHTML = "0";
+        }
+
+        if(palmFacing == "Outwards"){
+          forward.innerHTML = "1"; 
+        }else if(palmFacing == "Inwards"){
+          forward.innerHTML = "2";
+        }else{
+          forward.innerHTML = "0";
+        }
 
         centerXdata.innerHTML = centerX;
         centerYdata.innerHTML = centerY;
